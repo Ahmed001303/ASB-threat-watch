@@ -50,8 +50,8 @@ improvising:
   stage ∈ `dev`/`staging`/`prod`.
 - Every resource carries these tags: `org=asb`, `project=threat-watch`,
   `stage=<stage>`, `managed-by=sst`, `owner=Innovation-Department`.
-- Infra is SST (Ion/v3). Never hand-roll CloudFormation/Terraform in parallel to
-  it.
+- Infra is SST. Never hand-roll CloudFormation/Terraform in parallel to it.
+  **`asb-deploy` says Ion/v3; this repo pins SST v4** — see "Open items".
 
 ## Secrets
 
@@ -125,21 +125,57 @@ risks a normal CRUD app doesn't have. These are not optional.
 ## Open items (must be resolved before first deploy)
 
 - ~~`owner` tag~~ — resolved: `Innovation-Department`.
-- **GitHub remote is a personal account.** `origin` currently points at
-  `github.com/Ahmed001303/ASB-threat-watch`. `asb-team-coordination` requires
-  `github.com/alsalambank/asb-threat-watch`. Needs org repo creation, then
-  `git remote set-url`.
+- ~~Summariser model/hosting decision~~ — resolved: **in-account Bedrock**
+  (`anthropic.claude-opus-5`). Nothing leaves ASB's AWS accounts, so no InfoSec
+  third-party review and no Data Processing Agreement are required. The model id
+  is **unverified** against `aws bedrock list-foundation-models` in the target
+  region — check before first deploy; it is an env var so confirming it needs no
+  code change.
 - **IS review not yet booked** — both gates (pre-design, pre-implementation).
-- **Summariser model/hosting decision not yet made** (in-account Bedrock vs
-  external API) — this determines whether an InfoSec third-party review and a
-  Data Processing Agreement are needed.
-- **Feed allowlist not yet approved.** Proposal in
-  `docs/design/feed-allowlist.md`; it becomes the committed config file for
-  rule 2 once the owner signs off.
+  **Application code now exists, which means the pre-implementation gate has
+  been passed without being cleared.** It was written on explicit instruction and
+  is not deployed; nothing is applied to AWS. The gate still governs merge and
+  deploy.
+- **GitHub remote is a personal account, and the repo is public.** `origin`
+  points at `github.com/Ahmed001303/ASB-threat-watch`.
+  `asb-team-coordination` requires `github.com/alsalambank/asb-threat-watch`,
+  private. Needs org repo creation, then `git remote set-url`.
+- **SST major version deviates from the standard.** `asb-deploy` and this file
+  say Ion/v3; `package.json` pins **v4**. Reason: the v3 dependency chain carried
+  7 high-severity advisories (via `opencontrol`/`hono`/MCP SDK in the SST CLI),
+  and v4 is clean. Blast radius of those advisories was developer/CI machines,
+  not deployed code — so this was a judgement call between two real risks, and it
+  needs sign-off either way. `sst.config.ts` is written in the same `$config`
+  style and has **not** been validated against the installed version.
+- **Feed allowlist not yet approved.** Now committed as `config/feeds.ts` (15
+  verified sources) so the fetcher has something to enforce, but owner sign-off
+  on the list itself is still outstanding — see `docs/design/feed-allowlist.md`.
 - **SSO provisioning model needs an InfoSec decision.** `asb-entra-sso` mandates
   pre-provision-only (no JIT). On a portal meant for casual department-wide
   reading, that is adoption friction — see `docs/design/process-flow.md`. Raise
-  it; do not deviate unilaterally.
+  it; do not deviate unilaterally. The compliant behaviour is what is
+  implemented; `JIT_PROVISIONING_ENABLED` in `src/lib/auth/users.ts` is hard-coded
+  `false` and deliberately **not** an env var, so the requirement cannot be
+  switched off without the ruling.
+- **Admin toggles are read-only.** The admin screen shows kill-switch and
+  per-source state and prints the exact `aws ssm put-parameter` command, rather
+  than writing to SSM from a web request. Granting the portal write access to its
+  own runtime config is a privileged mutation that belongs after the
+  pre-implementation review, not before it.
+
+## Where the rules live in the code
+
+A reviewer should be able to find each project-specific rule without searching:
+
+| Rule | Implemented in | Tested in |
+|---|---|---|
+| 1 — content is data, not instruction | `src/lib/summarise/prompt.ts` | `tests/security.test.ts` |
+| 2 — feed allowlist, no SSRF | `config/feeds.ts`, `src/lib/feeds/fetch.ts` | `tests/security.test.ts` |
+| 3 — AI label + source link | `src/components/ItemCard.tsx` | — (visual) |
+| 4 — awareness, not instruction | `src/lib/summarise/validate.ts` | `tests/security.test.ts` |
+| 5 — report button | `src/components/ItemCard.tsx`, `src/app/api/report/route.ts` | — |
+| 6 — kill switch (no redeploy) | `src/lib/runtime-config.ts`, `sst.config.ts` | `tests/security.test.ts` |
+| 7 — sanitise on render | `src/lib/feeds/parse.ts`, `src/lib/render/escape.ts` | `tests/security.test.ts` |
 
 ## What's NOT covered here
 

@@ -1,0 +1,33 @@
+{
+  "name": "asb-threat-watch",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Internal security & technology news portal for the Al Salam Bank Innovation Department.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "diff": "sst diff",
+    "deploy": "sst deploy"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1109.0",
+    "@aws-sdk/client-dynamodb": "^3",
+    "@aws-sdk/client-ssm": "^3",
+    "@aws-sdk/lib-dynamodb": "^3",
+    "@node-saml/node-saml": "^5",
+    "fast-xml-parser": "^5",
+    "next": "^16.3.0",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "sst": "^4.17.1",
+    "typescript": "^5",
+    "vitest": "^3"
+  }
+}
