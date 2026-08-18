@@ -1,0 +1,81 @@
+name: CI
+
+# `asb-secure-development` requires SCA scanning from day one of the project —
+# "retrofitting later is far costlier". This workflow is that, plus the checks
+# that keep the security invariants in tests/security.test.ts from silently
+# regressing.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      # `npm ci` not `npm install`: it installs exactly the lockfile's resolved
+      # versions, including transitive ones, so CI cannot drift from local.
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Typecheck (app)
+        run: npx tsc --noEmit
+
+      # Validates sst.config.ts against the real SST provider types. Needs no
+      # AWS credentials — `sst install` only fetches the provider packages —
+      # and catches wrong property names before they surface on a `sst diff`.
+      - name: Typecheck (infra)
+        run: npm run typecheck:infra
+
+      - name: Tests
+        run: npx vitest run
+        env:
+          # Test-only value. The real secret is an SSM SecureString injected at
+          # deploy time and never present in CI.
+          SESSION_SECRET: ci-placeholder-secret-at-least-32-chars
+
+      - name: Build
+        run: npx next build
+        env:
+          SESSION_SECRET: ci-placeholder-secret-at-least-32-chars
+
+      # Fails the build on a known-vulnerable dependency. `--audit-level=high`
+      # rather than `low` so the gate is actionable; revisit if that proves noisy.
+      - name: Dependency audit (SCA)
+        run: npm audit --audit-level=high
+
+      - name: No raw control bytes in source
+        run: python3 scripts/check-no-control-bytes.py
+
+  sbom:
+    # A machine-readable SBOM per build, per the OWASP supply-chain guidance in
+    # asb-secure-development. Retained as a build artifact so a future advisory
+    # can be checked against what actually shipped.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Generate CycloneDX SBOM
+        run: npx --yes @cyclonedx/cyclonedx-npm --output-file sbom.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json

@@ -1,0 +1,46 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# builds
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# sst
+.sst/
+.open-next/
+sst-env.d.ts
+
+# env & secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials
+
+# testing / coverage
+coverage/
+.nyc_output/
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
