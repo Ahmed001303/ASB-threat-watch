@@ -15,6 +15,12 @@ deploy exist for this project yet.
 | Data dictionary | [`data-dictionary.md`](data-dictionary.md) | `asb-secure-development` — design phase |
 | Feed allowlist proposal | [`feed-allowlist.md`](feed-allowlist.md) | `CLAUDE.md` rule 2 (committed config) |
 | Entra app request | [`entra-app-request.md`](entra-app-request.md) | `asb-entra-sso` — blocking IT dependency |
+| **InfoSec review brief** | [`infosec-brief.md`](infosec-brief.md) | The covering document to send with this package |
+
+**Sending this to InfoSec?** [`infosec-brief.md`](infosec-brief.md) is the
+covering document — it states what is being asked, the security argument, the
+three rulings needed, the known gaps, and the disclosure that implementation ran
+ahead of the pre-implementation gate.
 
 ## The one thing a reviewer should look at first
 
