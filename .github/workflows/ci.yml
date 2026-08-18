@@ -30,8 +30,14 @@ jobs:
       - name: Install (locked)
         run: npm ci
 
-      - name: Typecheck
+      - name: Typecheck (app)
         run: npx tsc --noEmit
+
+      # Validates sst.config.ts against the real SST provider types. Needs no
+      # AWS credentials — `sst install` only fetches the provider packages —
+      # and catches wrong property names before they surface on a `sst diff`.
+      - name: Typecheck (infra)
+        run: npm run typecheck:infra
 
       - name: Tests
         run: npx vitest run

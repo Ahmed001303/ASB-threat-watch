@@ -1,0 +1,5 @@
+{
+  "extends": "./.sst/platform/tsconfig.json",
+  "compilerOptions": { "noEmit": true, "skipLibCheck": true },
+  "include": ["sst.config.ts", ".sst/platform/config.d.ts"]
+}
