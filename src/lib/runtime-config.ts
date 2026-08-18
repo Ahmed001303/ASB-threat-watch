@@ -14,6 +14,7 @@
  */
 
 import { GetParametersByPathCommand, SSMClient } from "@aws-sdk/client-ssm";
+import { previewEnabled } from "./dev/preview";
 import { log, errorSummary } from "./log";
 
 export interface RuntimeConfig {
@@ -94,6 +95,15 @@ export function mapParameters(
 export async function loadRuntimeConfig(
   opts: { stage?: string; region?: string } = {},
 ): Promise<RuntimeConfig> {
+  if (previewEnabled()) {
+    return {
+      killSwitch: process.env.PREVIEW_KILL_SWITCH === "1",
+      feedEnabled: {},
+      ssoEnabled: true,
+      degraded: false,
+    };
+  }
+
   const stage = opts.stage ?? process.env.STAGE ?? "dev";
   const region = opts.region ?? process.env.AWS_REGION ?? "eu-west-1";
   const prefix = parameterPrefix(stage);

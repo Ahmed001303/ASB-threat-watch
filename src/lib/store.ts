@@ -20,6 +20,7 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import type { Category } from "../../config/feeds";
+import { previewEnabled, previewItems, previewSummary } from "./dev/preview";
 
 export interface NewsItemRecord {
   readonly itemId: string;
@@ -151,6 +152,8 @@ export async function getSummary(
   itemId: string,
   tables: TableNames = tableNamesFromEnv(),
 ): Promise<ItemSummaryRecord | undefined> {
+  if (previewEnabled()) return previewSummary(itemId);
+
   const out = await docClient().send(
     new GetCommand({ TableName: tables.summaries, Key: { itemId } }),
   );
@@ -161,6 +164,8 @@ export async function getItem(
   itemId: string,
   tables: TableNames = tableNamesFromEnv(),
 ): Promise<NewsItemRecord | undefined> {
+  if (previewEnabled()) return previewItems().find((i) => i.itemId === itemId);
+
   const out = await docClient().send(
     new GetCommand({ TableName: tables.items, Key: { itemId } }),
   );
@@ -177,6 +182,12 @@ export async function listRecentItems(
   tables: TableNames = tableNamesFromEnv(),
 ): Promise<NewsItemRecord[]> {
   const limit = Math.min(opts.limit ?? 50, 100);
+
+  if (previewEnabled()) {
+    return previewItems()
+      .filter((i) => !opts.category || i.category === opts.category)
+      .slice(0, limit);
+  }
 
   // `feedPartition` is a constant per category so the GSI has a small, known
   // set of partitions and the query is always bounded.

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "diff": "sst diff",
-    "deploy": "sst deploy"
+    "deploy": "sst deploy",
+    "preview": "PREVIEW_MODE=1 SESSION_SECRET=local-preview-secret-at-least-32-chars next dev"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1109.0",

@@ -10,10 +10,15 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { parseSession, SESSION_COOKIE, type Role, type Session } from "./session";
+import { previewEnabled, PREVIEW_SESSION } from "../dev/preview";
 import { log } from "../log";
 
 /** Returns the session or undefined. Never throws for an absent session. */
 export async function currentSession(): Promise<Session | undefined> {
+  // Local preview only. Requires NODE_ENV === "development", which `next build`
+  // makes statically false — this cannot be switched on in a deployed build.
+  if (previewEnabled()) return PREVIEW_SESSION;
+
   const store = await cookies();
   return parseSession(store.get(SESSION_COOKIE)?.value);
 }
